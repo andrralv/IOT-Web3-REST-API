@@ -8,11 +8,30 @@ web3 = new web3();
 web3.setProvider(new web3.providers.HttpProvider('http://localhost:8545'));
 var contracts = [];
 var TruffleContract = require('truffle-contract');
-var SensorABI = require('../build/contracts/Sensor.json');
+var ActorABI = require('../build/contracts/Actor.json');
+var VehiculeABI = require('../build/contracts/Vehicule.json');
+var VehiculeDatabaseABI = require('../build/contracts/VehiculeDatabase.json');
 
 //contracts init
-contracts.Sensor = TruffleContract(SensorABI);
-contracts.Sensor.setProvider(web3.currentProvider);
+contracts.Actor = TruffleContract(ActorABI);
+contracts.Actor.setProvider(web3.currentProvider);
+contracts.Vehicule = TruffleContract(VehiculeABI);
+contracts.Vehicule.setProvider(web3.currentProvider);
+contracts.VehiculeDatabase = TruffleContract(VehiculeDatabaseABI);
+contracts.VehiculeDatabase.setProvider(web3.currentProvider);
+
+//Azure Queue
+var azureQueue = require('azure-queue-node');
+azureQueue.setDefaultClient({
+    accountUrl: 'https://tbdix.queue.core.windows.net/tbdixfaultcodes',
+    accountName: 'tbdix',
+    accountKey: 'YI/QJHierS3d6Ckp6o4wo/B5BTM+odfQHYDLuw6BA7N5SXTN6aAKoo9I0/ZVjg76n/AxP8MtnXGSOdU3ZpgPPg=='
+});
+
+var client = azureQueue.getDefaultClient();
+client.createQueue('sensor', true, function (data) {
+    console.log("created: " + data);
+});
 
 //express app
 var app = express();
@@ -20,26 +39,38 @@ var router = express.Router();
 const path = require('path');
 
 /* THIS API READS FROM THE QUEUE AND COMMUNICATES WITH BLOCKCHAIN */
-router.post('/', function (req, res) {
-    if (web3.isConnected()) {
-        console.log("Web3: Connection Succesful.")
-    } else {
-        console.log("Web3: Unable to establish a connection.")
-    }
-    web3.personal.unlockAccount(web3.eth.accounts[0],"1234");
-    contracts.Sensor.deployed().then(instance=>{
-        return instance.putData(Math.floor((Math.random() * 10) + 1), {from: web3.eth.accounts[0]});
-    }).then(result=>{
-        res.json(
-            {
-                "blockNumber": web3.eth.blockNumber,
-                "tx" : result.tx
-            }
-        );
-    }).catch(error => { 
-        console.log('error', error);
-        res.json({"error":error.message});
-    });    
+router.post('/:vehicule', function (req, res) {
+    client.getMessages('sensor', {maxMessages: 1}, function(error, data) {
+        if(data.length == 0){
+            res.json({"response":"nothing to do"});
+        }
+        data.forEach(row => {
+            web3.personal.unlockAccount(web3.eth.accounts[0], "1234");
+            contracts.Vehicule.at(req.params.vehicule).then(instance => {
+                return instance.addAction(5, web3.eth.accounts[1], "Auto Sensor", JSON.stringify(row.messageText), { from: web3.eth.accounts[0] });
+            }).then(result => {
+                client.deleteMessage('sensor', row.messageId, row.popReceipt, function(err, data) {});
+                res.json(
+                    {
+                        "data" : row,
+                        "tx": result.tx 
+                    }
+                );
+            }).catch(error => {
+                res.json({ "error": error.message });
+            });
+        });
+    });
+});
+
+router.get('/push', function (req, res) {
+    client.putMessage('sensor', {
+        co2exhaust: Math.floor((Math.random() * 10) + 1),
+        fuelInjection: Math.floor((Math.random() * 10) + 1),
+        coolantTemp: Math.floor((Math.random() * 10) + 1)
+    }, function (error, data) {
+        res.json({ "result" : "ok" });
+    });
 });
 
 module.exports = router;

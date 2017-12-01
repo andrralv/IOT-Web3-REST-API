@@ -13,7 +13,7 @@ app.use(bodyParser.json({type: 'application/json'}));
 app.use(cookieParser());
 
 app.use('/ml', get);
-//app.use('/iot', post);
+app.use('/iot', post);
 
 module.exports = app;
 

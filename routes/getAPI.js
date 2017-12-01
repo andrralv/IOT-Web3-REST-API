@@ -28,7 +28,7 @@ const path = require('path');
 /* THIS API READS FROM THE BLOCKCHAIN AND SERVES TO MACHINE LEARNING SERVICE */
 router.get('/:actor/:vin', function (req, res) {
   var response = {};
-  var vehiculeInstance;
+  var vAddress;
   contracts.Actor.at(req.params.actor).then(actor => {
     return actor.database();
   }).then(databaseAddress => {
@@ -36,15 +36,21 @@ router.get('/:actor/:vin', function (req, res) {
   }).then(database => {
     return database.vins(web3.fromUtf8(req.params.vin));
   }).then(vehiculeAddress => {
+    vAddress = vehiculeAddress;
     return contracts.Vehicule.at(vehiculeAddress);
   }).then(vehicule => {
     vehicule.OnActionEvent({}, { fromBlock: 0, toBlock: 'latest' }).get((error, result) => {
       response["history"] = [];
       result.forEach(row => {
+        var data;
+        if(row.args._data){
+          data = JSON.parse(row.args._data);
+        }
         response["history"].push({
           event : row.args._event.c[0],
           rerefence : row.args._ref,
           description : row.args._description,
+          data: data,
           timestamp : new Date(row.args._timestamp.c[0] * 1000),
           blockNumber : row.args._blockNumber.c[0]
         });
@@ -53,6 +59,7 @@ router.get('/:actor/:vin', function (req, res) {
     return vehicule.getState();
   }).then(state => {
     response["state"] = {
+      "address" : vAddress,
       brand : state[0],
       model : state[1],
       type : state[2],
