@@ -29,6 +29,7 @@ azureQueue.setDefaultClient({
 });
 
 var client = azureQueue.getDefaultClient();
+console.log(azureQueue.getDefaultClient());
 client.createQueue('sensor', true, function (data) {
     console.log("created: " + data);
 });
@@ -47,6 +48,9 @@ router.post('/:vehicule', function (req, res) {
         data.forEach(row => {
             web3.personal.unlockAccount(web3.eth.accounts[0], "1234");
             contracts.Vehicule.at(req.params.vehicule).then(instance => {
+                console.log("test 0: (from) ", web3.eth.accounts[0])
+                console.log("test 1: (to) ", web3.eth.accounts[1])
+                console.log("test 2: (json) ", JSON.stringify(row.messageText))
                 return instance.addAction(5, web3.eth.accounts[1], "Auto Sensor", JSON.stringify(row.messageText), { from: web3.eth.accounts[0] });
             }).then(result => {
                 client.deleteMessage('sensor', row.messageId, row.popReceipt, function(err, data) {});
