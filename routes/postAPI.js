@@ -79,7 +79,7 @@ router.get('/push', function (req, res) {
         fuseBox: Math.floor((Math.random() * 18)),
         barometer: Math.floor((Math.random() * 100)),
         transmissionFluid: Math.floor((Math.random() * 100)),
-        fuelTank: Math.floor((Math.random() * 5000)),
+        fuelTank: Math.floor((Math.random() * 42)),
         crashFront: Math.floor((Math.random() * 2)),
         airbagRight: Math.floor((Math.random() * 2)), 
         airbagLeft: Math.floor((Math.random() * 2)), 
