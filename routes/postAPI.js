@@ -71,7 +71,24 @@ router.get('/push', function (req, res) {
     client.putMessage('sensor', {
         co2exhaust: Math.floor((Math.random() * 10) + 1),
         fuelInjection: Math.floor((Math.random() * 10) + 1),
-        coolantTemp: Math.floor((Math.random() * 10) + 1)
+        coolantTemp: Math.floor((Math.random() * 10) + 1),
+        batteryCheck: Math.floor((Math.random() * 2)),
+        oilMeter: Math.floor((Math.random() * 10) + 1),
+        acCompressor: Math.floor((Math.random() * 15) + 1),
+        mileage: Math.floor((Math.random() * 10000)),
+        fuseBox: Math.floor((Math.random() * 18)),
+        barometer: Math.floor((Math.random() * 100)),
+        transmissionFluid: Math.floor((Math.random() * 100)),
+        fuelTank: Math.floor((Math.random() * 5000)),
+        crashFront: Math.floor((Math.random() * 2)),
+        airbagRight: Math.floor((Math.random() * 2)), 
+        airbagLeft: Math.floor((Math.random() * 2)), 
+        crashRight: Math.floor((Math.random() * 2)), 
+        crashLeft: Math.floor((Math.random() * 2)), 
+        crashBackRight: Math.floor((Math.random() * 2)), 
+        crashBackLeft: Math.floor((Math.random() * 2))
+        
+        // BINARY: Math.floor((Math.random() * 2))
     }, function (error, data) {
         res.json({ "result" : "ok" });
     });
